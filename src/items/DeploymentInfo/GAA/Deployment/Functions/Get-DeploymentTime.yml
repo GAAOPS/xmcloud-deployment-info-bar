@@ -1,0 +1,114 @@
+﻿---
+ID: "818c823d-5af5-407f-9fad-4e7d9fd52a8c"
+Parent: "fd09a050-8da4-492c-9131-a44621d32836"
+Template: "dd22f1b3-bd87-4db2-9e7d-f7a496888d43"
+Path: "/sitecore/system/Modules/PowerShell/Script Library/GAA/Deployment/Functions/Get-DeploymentTime"
+SharedFields:
+- ID: "b1a94ff0-6897-47c0-9c51-aa6acb80b1f0"
+  Hint: Script
+  Value: |
+    # Connect to deploy app api every 5 minutes and check the latest deployment time
+    Function Get-DeploymentTime {
+       [cmdletbinding()]
+       Param(
+           $timeZone = "W. Europe Standard Time"
+       )
+       # Cache access token for 4 hours
+       $AccessTokenCache = 14400
+       # scheduled tasks will run O.O.B every 10 minutes. so in the worst case, we need to cache the results for 20 minutes
+       $DeployAppCache = 1230 
+       $EnvID = $env:BuildMetadata__EnvironmentId
+       $DeploymentId = $env:BuildMetadata__DeploymentId
+       $timeZone = "W. Europe Standard Time"
+    
+       Import-Function Get-DecryptedSecureValue
+       Import-Function Get-CachedResult
+       $DeployClientId = $env:DeployClientId
+       $DeployClientSecret = $env:DeployClientSecret
+       $DeployKey = $env:DeployKey
+       
+       if (-not ($DeployClientId -and $DeployClientSecret -and $DeployKey)) {
+           Write-Log "[Get-DeploymentTime] DeployClientId or DeployClientSecret or DeployKey is missing."
+           return $null
+       }
+    
+       $clientId = Get-DecryptedSecureValue -Encrypted $DeployClientId -EncryptionKey $DeployKey
+       $clientSecret = Get-DecryptedSecureValue -Encrypted $DeployClientSecret -EncryptionKey $DeployKey
+    
+       $JWTRequest = @{
+           client_id     = $clientId
+           client_secret = $clientSecret
+           audience      = "https://api.sitecorecloud.io"
+           grant_type    = "client_credentials"
+           scope         = "xmclouddeploy.deployments:manage"
+       } | ConvertTo-Json
+    
+       write-log "[Get-DeploymentTime] Getting Access token"
+       # Caching the access token for $AccessTokenCache seconds
+       $accessToken = Get-CachedResult -Key "DeployStatusToken" -cachExpSeconds $AccessTokenCache -ScriptBlock {
+           try {
+               $accessTokenRequest = Invoke-WebRequest -Method Post -Uri "https://auth.sitecorecloud.io/oauth/token" -ContentType "application/json" -Body $JWTRequest -UseBasicParsing -ErrorAction Stop 
+           }
+           catch {
+               Write-Log "Getting access token failed. $($_)" -Log Error
+               return $null;
+           }    
+           $token = ($accessTokenRequest.Content | ConvertFrom-Json).access_token
+           return $token
+       }
+    
+       if ($null -eq $accessToken) {
+           write-log "[Get-DeploymentTime] Error getting Access token." -Log Error
+           return;
+       }
+    
+       write-log "[Get-DeploymentTime] Getting deployment Information"
+       # Cache deployment information for $DeployAppCache seconds and force to set the cache
+       $deploymentTime = Get-CachedResult -Key "DeployCompletedTime" -Reset -cachExpSeconds $DeployAppCache -ScriptBlock {
+           $authHeaders = @{
+               'Content-Type'  = 'application\json'
+               'Authorization' = "Bearer $accessToken"
+           }
+    
+           try {
+               $URL = "https://xmclouddeploy-api.sitecorecloud.io/api/deployments/v1/$DeploymentId"
+               $depResponse = Invoke-WebRequest -Headers $authHeaders -Uri $URL -UseBasicParsing -ErrorAction Stop
+               $completedUTC = [datetime](($depResponse.Content | ConvertFrom-Json).completedAt)
+               $deploymentLocalTime = [System.TimeZoneInfo]::ConvertTimeBySystemTimeZoneId( $completedUTC , $timeZone )
+               return new-object psobject -property  @{DeploymentTime = $deploymentLocalTime; EnvironmentId = $EnvID; DeploymentID = $DeploymentId }            
+           }
+           catch {
+               Write-Log "[Get-DeploymentTime] Getting deployment information failed. $($_)" -Log Error
+               return $null;
+           }
+       }
+    
+       $deploymentTime
+    }
+    
+Languages:
+- Language: en
+  Versions:
+  - Version: 1
+    Fields:
+    - ID: "25bed78c-4957-4165-998a-ca1b52f67497"
+      Hint: __Created
+      Value: 20231112T172415Z
+    - ID: "52807595-0f8f-4b20-8d2a-cb71d28c6103"
+      Hint: __Owner
+      Value: |
+        sitecore\ghodrat.ashournia@unic.com
+    - ID: "5dd74568-4d4b-44c1-b513-0af5f4cda34f"
+      Hint: __Created by
+      Value: |
+        sitecore\ghodrat.ashournia@unic.com
+    - ID: "8cdc337e-a112-42fb-bbb4-4143751e123f"
+      Hint: __Revision
+      Value: "2675def2-8502-49a3-9fcf-74e23c79e9b2"
+    - ID: "badd9cf9-53e0-4d0c-bcc0-2d784c282f6a"
+      Hint: __Updated by
+      Value: |
+        sitecore\ghodrat.ashournia@unic.com
+    - ID: "d9cf14b1-fa16-4ba6-9288-e8a174d4d522"
+      Hint: __Updated
+      Value: 20231118T103028Z

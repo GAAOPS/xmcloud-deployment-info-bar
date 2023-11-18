@@ -1,0 +1,17 @@
+{
+    "$schema": "../.sitecore/schemas/ModuleFile.schema.json",
+    "namespace": "GAADeployment",
+    "items": {
+        "includes": [
+            {
+                "name": "DeploymentInfo",
+                "path": "/sitecore/system/Modules/PowerShell/Script Library/GAA"
+            },
+            {
+                "name": "DeploymentInfoTask",
+                "path": "/sitecore/system/Tasks/Schedules/Deployment Info Task",
+                "scope": "singleItem"
+            }
+        ]
+    }
+}

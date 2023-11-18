@@ -1,0 +1,86 @@
+﻿---
+ID: "1337771b-d091-4b51-b0e6-80f18311e8ac"
+Parent: "73ea772a-eede-4985-b129-ac804719fbf3"
+Template: "dd22f1b3-bd87-4db2-9e7d-f7a496888d43"
+Path: /sitecore/system/Modules/PowerShell/Script Library/GAA/Deployment/Content Editor/Warning/DeploymentInfo
+SharedFields:
+- ID: "1c76313e-3c8c-4807-a826-135d10c39299"
+  Hint: ShowRule
+  Value: <ruleset />
+- ID: "b1a94ff0-6897-47c0-9c51-aa6acb80b1f0"
+  Hint: Script
+  Value: |
+    Import-Function  Get-CachedResult 
+    $deployment = Get-CachedResult -Key "DeployCompletedTime"
+    if (-not $deployment) {
+       # Hide the information bar for local environment
+       return;
+    }
+    $title = "Deployment Information"
+    $isAdmin = (get-user -Current).IsAdministrator
+    $text = "The last deployment was on $($deployment.DeploymentTime.tostring("dddd, dd.MMMM yyyy  a\t HH:mm:ss")) ."
+    
+    if ($isAdmin) {
+       # Add environment information for the Administrator
+       $text = "$text <br> Environment Id:$($deployment.EnvironmentId) , Deployment Id:$($deployment.DeploymentID) ."
+    }
+    
+    $icon = "/sitecore/shell/themes/standard/Images/information.png"
+    $pipelineArgs.Add($title, $text);
+    $warning = $pipelineArgs.Warnings[0]
+    $warning.Icon = $icon
+- ID: "f62c67b4-28b6-4a6f-91cb-db78cf054f4e"
+  Hint: EnableRule
+  Value: |
+    <ruleset>
+      <rule
+        uid="{84C89CC1-AA3B-4BBC-B9B6-9BD879A1FBD9}">
+        <conditions>
+          <or
+            uid="A91F985CD30D45CE980CBA2EEC662744">
+            <or
+              uid="6B428F4327DF4E83AB6EA210FD56EAF0">
+              <condition
+                id="{D0810F9D-734C-452D-BBB6-4730368D68F1}"
+                uid="11AFED5027C543ABBADF36D727E507F7"
+                templateid="{B91811F1-FA8B-47F8-B131-BD2C6D5EC805}" />
+              <condition
+                id="{D0810F9D-734C-452D-BBB6-4730368D68F1}"
+                uid="310204EDC6FB40C7A6AC1C46FF9F1251"
+                templateid="{9ED66404-64C9-4122-90E1-869CB3CEA566}" />
+            </or>
+            <condition
+              id="{4B889F07-94D4-4371-B522-9FFE8AF0BE12}"
+              uid="B8056783C51440D7AFA386D2166AA543"
+              operatorid="{10537C58-1684-4CAB-B4C0-40C10907CE31}"
+              value="/sitecore/content/Home" />
+          </or>
+        </conditions>
+      </rule>
+    </ruleset>
+Languages:
+- Language: en
+  Versions:
+  - Version: 1
+    Fields:
+    - ID: "25bed78c-4957-4165-998a-ca1b52f67497"
+      Hint: __Created
+      Value: 20231113T113934Z
+    - ID: "52807595-0f8f-4b20-8d2a-cb71d28c6103"
+      Hint: __Owner
+      Value: |
+        sitecore\ghodrat.ashournia@unic.com
+    - ID: "5dd74568-4d4b-44c1-b513-0af5f4cda34f"
+      Hint: __Created by
+      Value: |
+        sitecore\ghodrat.ashournia@unic.com
+    - ID: "8cdc337e-a112-42fb-bbb4-4143751e123f"
+      Hint: __Revision
+      Value: "d5d1d19b-47bf-4339-af6a-64dd31c17e6c"
+    - ID: "badd9cf9-53e0-4d0c-bcc0-2d784c282f6a"
+      Hint: __Updated by
+      Value: |
+        sitecore\ghodrat.ashournia@unic.com
+    - ID: "d9cf14b1-fa16-4ba6-9288-e8a174d4d522"
+      Hint: __Updated
+      Value: 20231118T102733Z

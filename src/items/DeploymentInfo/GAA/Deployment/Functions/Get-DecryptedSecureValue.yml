@@ -1,0 +1,65 @@
+﻿---
+ID: "4bf4a8b5-4433-488c-a476-01534d5bbabb"
+Parent: "fd09a050-8da4-492c-9131-a44621d32836"
+Template: "dd22f1b3-bd87-4db2-9e7d-f7a496888d43"
+Path: "/sitecore/system/Modules/PowerShell/Script Library/GAA/Deployment/Functions/Get-DecryptedSecureValue"
+SharedFields:
+- ID: "b1a94ff0-6897-47c0-9c51-aa6acb80b1f0"
+  Hint: Script
+  Value: |
+    # Decrypt the given string based on the five encryption key
+    Function Get-DecryptedSecureValue {
+        [cmdletbinding()]
+        Param(
+        
+            [Parameter(
+                Mandatory = $True,
+                Position = 0,
+                ValueFromPipeLine = $true
+            )]
+            [Alias("String")]
+            [String]$Encrypted,
+        
+            [Parameter(
+                Mandatory = $True,
+                Position = 1
+            )]
+            [Alias("Key")]
+            [String]$EncryptionKey
+        )
+        $aesKey = $EncryptionKey.Split(",")          # example: (26,11,0,14,54,32,144,23,5,3,1,41,36,31,18,175,6,17,1,9,5,1,76,23)
+        # create new object using $encrypted and $aeskey
+        $secureObject = ConvertTo-SecureString -String $Encrypted -Key $aesKey
+     
+        # perform decryption from the secure object
+        $decrypted = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureObject)
+        $decrypted = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($decrypted)
+    
+        $decrypted 
+    }
+Languages:
+- Language: en
+  Versions:
+  - Version: 1
+    Fields:
+    - ID: "25bed78c-4957-4165-998a-ca1b52f67497"
+      Hint: __Created
+      Value: 20231112T172640Z
+    - ID: "52807595-0f8f-4b20-8d2a-cb71d28c6103"
+      Hint: __Owner
+      Value: |
+        sitecore\ghodrat.ashournia@unic.com
+    - ID: "5dd74568-4d4b-44c1-b513-0af5f4cda34f"
+      Hint: __Created by
+      Value: |
+        sitecore\ghodrat.ashournia@unic.com
+    - ID: "8cdc337e-a112-42fb-bbb4-4143751e123f"
+      Hint: __Revision
+      Value: "f72c7fcd-64b1-47f1-a4d1-ed5aef8132a2"
+    - ID: "badd9cf9-53e0-4d0c-bcc0-2d784c282f6a"
+      Hint: __Updated by
+      Value: |
+        sitecore\ghodrat.ashournia@unic.com
+    - ID: "d9cf14b1-fa16-4ba6-9288-e8a174d4d522"
+      Hint: __Updated
+      Value: 20231114T164230Z
