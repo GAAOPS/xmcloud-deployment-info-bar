@@ -7,7 +7,6 @@ SharedFields:
 - ID: "b1a94ff0-6897-47c0-9c51-aa6acb80b1f0"
   Hint: Script
   Value: |
-    # Store the script result in the cache with the specified expiry duration
     Function Get-CachedResult {
         [cmdletbinding()]
         Param(
@@ -18,17 +17,62 @@ SharedFields:
             [switch] $Reset,
             $cachExpSeconds = 1230
         )
-        $CACHE_VARIABLE_NAME = "PS_Scripting_Cache"
-        $cacheSize = [Sitecore.StringUtil]::ParseSizeString("200KB")
-        $cache = [Sitecore.Caching.CacheManager]::GetNamedInstance($CACHE_VARIABLE_NAME, $cacheSize, $true)
     
-        $cachedValue = $cache.GetEntry($Key).Data
+        $sourceCode = @"
+    namespace GAA.SPECaching
+    {
+        using Sitecore;
+        using Sitecore.Caching.Generics;
+        using System;
+    
+        public class SPECache : CustomCache<object>
+        {
+            public SPECache(long maxSize)
+                : base("SPE_Scripting_Cache", maxSize)
+            {
+            }
+        }
+        public class SPECacheManager
+        {
+            private static readonly SPECache Cache;
+    
+            static SPECacheManager()
+            {
+                Cache = new SPECache(StringUtil.ParseSizeString("100KB"))
+                {
+                    InnerCache = { Scavengable = true }
+                };
+            }
+            public static object Get(string key)
+            {
+                return Cache.InnerCache.GetValue(key);
+            }
+    
+            public static void Set(string key, object value, DateTime absExpirationDateTime)
+            {
+                Cache.InnerCache.Add(key, value, absExpirationDateTime);
+            }
+    
+            public static void Set(string key, object value, TimeSpan slidingExpiration)
+            {
+                Cache.InnerCache.Add(key, value, slidingExpiration);
+            }
+    
+            public static void Set(string key, object value)
+            {
+                Cache.InnerCache.Add(key, value);
+            }
+        }
+    }
+    "@
+        Add-Type -TypeDefinition $SourceCode -Language CSharp -ReferencedAssemblies Sitecore.Kernel  -PassThru | Out-Null
+        $cachedValue = [GAA.SPECaching.SPECacheManager]::Get($key)
         
         if ($cachedValue -and (-not $Reset)) {
             return $cachedValue
         }
         try {
-            if(-not $ScriptBlock){
+            if (-not $ScriptBlock) {
                 return $null
             }
     
@@ -37,7 +81,7 @@ SharedFields:
                 $date = Get-Date
                 $exp = $date.AddSeconds($cachExpSeconds)
                 Write-Log "[Deployment-Get-CachedResult] Adding $Key with exp: $cachExpSeconds"
-                $cache.Add($Key, $cachedValue, $exp) | Out-Null 
+                [GAA.SPECaching.SPECacheManager]::Set($Key, $cachedValue, $exp) | Out-Null 
             }
         }
         catch {
@@ -64,11 +108,11 @@ Languages:
         sitecore\ghodrat.ashournia@unic.com
     - ID: "8cdc337e-a112-42fb-bbb4-4143751e123f"
       Hint: __Revision
-      Value: "bdc03f19-6eec-4bca-bd0e-9b309128615c"
+      Value: "aef4ccc6-70c7-43cb-ac0a-8c4fa27a9ffb"
     - ID: "badd9cf9-53e0-4d0c-bcc0-2d784c282f6a"
       Hint: __Updated by
       Value: |
         sitecore\ghodrat.ashournia@unic.com
     - ID: "d9cf14b1-fa16-4ba6-9288-e8a174d4d522"
       Hint: __Updated
-      Value: 20231118T121539Z
+      Value: 20231120T112455Z

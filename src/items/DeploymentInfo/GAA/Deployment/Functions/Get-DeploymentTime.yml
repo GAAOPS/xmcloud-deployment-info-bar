@@ -7,7 +7,7 @@ SharedFields:
 - ID: "b1a94ff0-6897-47c0-9c51-aa6acb80b1f0"
   Hint: Script
   Value: |
-    # Connect to deploy app api every 5 minutes and check the latest deployment time
+    # Connect to deploy app api every 10 minutes and check the latest deployment time
     Function Get-DeploymentTime {
        [cmdletbinding()]
        Param(
@@ -43,10 +43,10 @@ SharedFields:
            scope         = "xmclouddeploy.deployments:manage"
        } | ConvertTo-Json
     
-       write-log "[Get-DeploymentTime] Getting Access token"
        # Caching the access token for $AccessTokenCache seconds
        $accessToken = Get-CachedResult -Key "DeployStatusToken" -cachExpSeconds $AccessTokenCache -ScriptBlock {
            try {
+               write-log "[Get-DeploymentTime] Getting Access token"
                $accessTokenRequest = Invoke-WebRequest -Method Post -Uri "https://auth.sitecorecloud.io/oauth/token" -ContentType "application/json" -Body $JWTRequest -UseBasicParsing -ErrorAction Stop 
            }
            catch {
@@ -62,7 +62,6 @@ SharedFields:
            return;
        }
     
-       write-log "[Get-DeploymentTime] Getting deployment Information"
        # Cache deployment information for $DeployAppCache seconds and force to set the cache
        $deploymentTime = Get-CachedResult -Key "DeployCompletedTime" -Reset -cachExpSeconds $DeployAppCache -ScriptBlock {
            $authHeaders = @{
@@ -71,6 +70,7 @@ SharedFields:
            }
     
            try {
+               write-log "[Get-DeploymentTime] Getting deployment Information"
                $URL = "https://xmclouddeploy-api.sitecorecloud.io/api/deployments/v1/$DeploymentId"
                $depResponse = Invoke-WebRequest -Headers $authHeaders -Uri $URL -UseBasicParsing -ErrorAction Stop
                $completedUTC = [datetime](($depResponse.Content | ConvertFrom-Json).completedAt)
@@ -104,11 +104,11 @@ Languages:
         sitecore\ghodrat.ashournia@unic.com
     - ID: "8cdc337e-a112-42fb-bbb4-4143751e123f"
       Hint: __Revision
-      Value: "2675def2-8502-49a3-9fcf-74e23c79e9b2"
+      Value: "aaaecfd0-ffd6-4a95-9295-af2d4fe22f7b"
     - ID: "badd9cf9-53e0-4d0c-bcc0-2d784c282f6a"
       Hint: __Updated by
       Value: |
         sitecore\ghodrat.ashournia@unic.com
     - ID: "d9cf14b1-fa16-4ba6-9288-e8a174d4d522"
       Hint: __Updated
-      Value: 20231118T103028Z
+      Value: 20231120T112633Z
